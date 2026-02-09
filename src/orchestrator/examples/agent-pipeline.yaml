@@ -1,0 +1,144 @@
+# Example pipeline using Claude agents across worktrees
+# For a feature that spans multiple repos
+
+workspaces:
+  - id: api
+    name: API Service
+    path: /code/api-service
+    concurrency: 1
+
+  - id: web
+    name: Web Frontend
+    path: /code/web-frontend
+    concurrency: 1
+
+  - id: mobile
+    name: Mobile App
+    path: /code/mobile-app
+    concurrency: 1
+
+tasks:
+  # API Implementation
+  - id: api-design
+    workspaceId: api
+    name: Design API endpoint
+    action:
+      type: claude-agent
+      prompt: |
+        Design a REST API endpoint for user preferences.
+        Create the OpenAPI spec in docs/api/preferences.yaml.
+        Include request/response schemas and error codes.
+      maxTurns: 20
+
+  - id: api-implement
+    workspaceId: api
+    name: Implement API endpoint
+    deps: [api-design]
+    action:
+      type: claude-agent
+      prompt: |
+        Implement the user preferences API endpoint based on
+        the OpenAPI spec in docs/api/preferences.yaml.
+        Add proper validation, error handling, and tests.
+      maxTurns: 50
+
+  - id: api-test
+    workspaceId: api
+    name: Test API endpoint
+    deps: [api-implement]
+    action:
+      type: shell
+      command: npm test -- --grep "preferences"
+    timeoutMs: 60000
+
+  # Web Frontend
+  - id: web-types
+    workspaceId: web
+    name: Generate TypeScript types
+    deps: [api-design]
+    action:
+      type: shell
+      command: npm run generate:types
+
+  - id: web-implement
+    workspaceId: web
+    name: Implement preferences UI
+    deps: [web-types]
+    action:
+      type: claude-agent
+      prompt: |
+        Implement a preferences page component using the
+        generated types from the API spec.
+        Include form validation and loading states.
+        Follow the existing component patterns in src/components/.
+      maxTurns: 40
+
+  - id: web-test
+    workspaceId: web
+    name: Test preferences UI
+    deps: [web-implement]
+    action:
+      type: shell
+      command: npm test -- --grep "preferences"
+
+  # Mobile App
+  - id: mobile-types
+    workspaceId: mobile
+    name: Generate Swift types
+    deps: [api-design]
+    action:
+      type: shell
+      command: ./scripts/generate-types.sh
+
+  - id: mobile-implement
+    workspaceId: mobile
+    name: Implement preferences screen
+    deps: [mobile-types]
+    action:
+      type: claude-agent
+      prompt: |
+        Implement a preferences screen in SwiftUI using
+        the generated types from the API spec.
+        Follow the existing MVVM patterns in the codebase.
+      maxTurns: 40
+
+  - id: mobile-test
+    workspaceId: mobile
+    name: Test preferences screen
+    deps: [mobile-implement]
+    action:
+      type: shell
+      command: xcodebuild test -scheme App -destination 'platform=iOS Simulator,name=iPhone 15'
+
+  # Integration
+  - id: e2e-test
+    workspaceId: api
+    name: End-to-end tests
+    deps: [api-test, web-test, mobile-test]
+    action:
+      type: shell
+      command: npm run test:e2e
+
+# Execution flow:
+#
+#                    ┌─────────────┐
+#                    │  api-design │
+#                    └──────┬──────┘
+#              ┌───────────┼───────────┐
+#              ▼           ▼           ▼
+#      ┌───────────┐ ┌───────────┐ ┌───────────┐
+#      │ web-types │ │api-implmt │ │mob-types  │
+#      └─────┬─────┘ └─────┬─────┘ └─────┬─────┘
+#            ▼             ▼             ▼
+#      ┌───────────┐ ┌───────────┐ ┌───────────┐
+#      │web-implmt │ │ api-test  │ │mob-implmt │
+#      └─────┬─────┘ └───────────┘ └─────┬─────┘
+#            ▼                           ▼
+#      ┌───────────┐               ┌───────────┐
+#      │ web-test  │               │ mob-test  │
+#      └─────┬─────┘               └─────┬─────┘
+#            └───────────┬───────────────┘
+#                        ▼
+#                  ┌───────────┐
+#                  │  e2e-test │
+#                  └───────────┘

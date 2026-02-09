@@ -1,0 +1,125 @@
+# Example pipeline configuration
+# Demonstrates task dependencies across multiple workspaces
+
+workspaces:
+  - id: frontend
+    name: Frontend App
+    path: ./projects/frontend
+    concurrency: 2
+
+  - id: backend
+    name: Backend API
+    path: ./projects/backend
+    concurrency: 2
+
+  - id: shared
+    name: Shared Library
+    path: ./projects/shared
+    concurrency: 1
+
+tasks:
+  # Shared library tasks (must complete first)
+  - id: shared-lint
+    workspaceId: shared
+    name: Lint shared library
+    action:
+      type: shell
+      command: npm run lint
+    retry:
+      maxAttempts: 2
+      initialDelayMs: 1000
+      maxDelayMs: 5000
+      backoffMultiplier: 2
+
+  - id: shared-build
+    workspaceId: shared
+    name: Build shared library
+    deps: [shared-lint]
+    action:
+      type: shell
+      command: npm run build
+
+  - id: shared-test
+    workspaceId: shared
+    name: Test shared library
+    deps: [shared-build]
+    action:
+      type: shell
+      command: npm test
+    timeoutMs: 60000
+
+  # Backend tasks (depend on shared)
+  - id: backend-lint
+    workspaceId: backend
+    name: Lint backend
+    action:
+      type: shell
+      command: npm run lint
+
+  - id: backend-build
+    workspaceId: backend
+    name: Build backend
+    deps: [backend-lint, shared-build]
+    action:
+      type: shell
+      command: npm run build
+
+  - id: backend-test
+    workspaceId: backend
+    name: Test backend
+    deps: [backend-build]
+    action:
+      type: shell
+      command: npm test
+    timeoutMs: 120000
+
+  # Frontend tasks (depend on shared)
+  - id: frontend-lint
+    workspaceId: frontend
+    name: Lint frontend
+    action:
+      type: shell
+      command: npm run lint
+
+  - id: frontend-build
+    workspaceId: frontend
+    name: Build frontend
+    deps: [frontend-lint, shared-build]
+    action:
+      type: shell
+      command: npm run build
+
+  - id: frontend-test
+    workspaceId: frontend
+    name: Test frontend
+    deps: [frontend-build]
+    action:
+      type: shell
+      command: npm test
+
+  # Integration tests (depend on both frontend and backend)
+  - id: integration-test
+    workspaceId: backend
+    name: Integration tests
+    deps: [backend-test, frontend-test]
+    action:
+      type: shell
+      command: npm run test:integration
+    timeoutMs: 300000
+
+  # Deploy (depends on all tests passing)
+  - id: deploy
+    workspaceId: backend
+    name: Deploy to staging
+    deps: [integration-test, shared-test]
+    action:
+      type: shell
+      command: npm run deploy:staging
+
+# Execution order (topological):
+# 1. shared-lint, backend-lint, frontend-lint (parallel)
+# 2. shared-build (after shared-lint)
+# 3. backend-build, frontend-build (after their lint + shared-build)
+# 4. shared-test, backend-test, frontend-test (after respective builds)
+# 5. integration-test (after backend-test + frontend-test)
+# 6. deploy (after integration-test + shared-test)

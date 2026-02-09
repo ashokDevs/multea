@@ -1,0 +1,29 @@
+{
+  "projects": [
+    {
+      "name": "vubo-1",
+      "path": "/Users/bhargav.k/Desktop/code/vubo-1"
+    },
+    {
+      "name": "vubo-1-srijan-post-scheduling",
+      "path": "/Users/bhargav.k/Desktop/code/vubo-1-srijan-post-scheduling"
+    },
+    {
+      "name": "vubo-ashok-clipping-template",
+      "path": "/Users/bhargav.k/Desktop/code/vubo-ashok-clipping-template"
+    },
+    {
+      "name": "vubo-dashboard",
+      "path": "/Users/bhargav.k/Desktop/code/vubo-dashboard"
+    },
+    {
+      "name": "vubo-free-trails",
+      "path": "/Users/bhargav.k/Desktop/code/vubo-free-trails"
+    },
+    {
+      "name": "memes-script",
+      "path": "/Users/bhargav.k/Desktop/code/memes-script"
+    }
+  ],
+  "initialTasks": []
+}
