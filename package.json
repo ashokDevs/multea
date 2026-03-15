@@ -11,6 +11,36 @@
     "lint": "eslint src/",
     "format": "prettier --write src/"
   },
+  "author": "ashokDevs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ashokDevs/multea.git"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "anthropic",
+    "ai-agent",
+    "multi-agent",
+    "agent-orchestrator",
+    "llm",
+    "terminal-ui",
+    "tui",
+    "react",
+    "ink",
+    "typescript",
+    "task-queue",
+    "dag",
+    "developer-tools",
+    "devtools",
+    "ai-coding-assistant",
+    "code-generation",
+    "automation",
+    "orchestration",
+    "multi-repo",
+    "monorepo",
+    "cli"
+  ],
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.0",
